@@ -1,0 +1,119 @@
+================================================================
+           ARIYAN BOT - REBRANDING & CONFIGURATION LOG
+================================================================
+  Date: 28 April 2026
+  Bot: mahiru security#3182
+  Client ID: 1498197753774473308
+  Guilds: 3 | Users: 422 | Cogs: 93
+================================================================
+
+[1] BOT IDENTITY CHANGE
+-----------------------
+  OLD: Zyrox X / Zyrox Development™
+  NEW: Ariyan
+
+  Files Updated:
+  - utils/config.py         → Bot name "Ariyan"
+  - core/zyrox.py           → Status "Powered by Ariyan"
+  - CodeX.py                → Console banner, footer, logs
+
+[2] BRANDING - FOOTERS & TITLES
+-------------------------------
+  All "Zyrox Development™" / "Powered by Zyrox" changed to "Powered by Ariyan"
+
+  Files Updated:
+  - cogs/events/mention.py       → Dropdown, footer, links
+  - cogs/commands/help.py        → "Ariyan Helper", "Start Ariyan X Today"
+  - cogs/commands/stats.py       → "Ariyan Stats Panel", all footers
+  - cogs/commands/antinuke.py    → "Ariyan Security", "Ariyan Supreme" role
+  - cogs/commands/owner.py       → "Ariyan Staffs", "Ariyan Owners", guild list
+  - cogs/commands/general.py     → "Ariyan Users", "Ariyan Integration Hub"
+  - cogs/commands/counting.py    → Footer
+  - cogs/commands/tracking.py    → Footer
+  - cogs/commands/fun.py         → Footer
+  - cogs/commands/music.py       → "Thanks for choosing Ariyan!"
+  - cogs/commands/np.py          → "Ariyan - No Prefix"
+  - cogs/commands/map.py         → Footer
+  - cogs/commands/afk.py         → Footer
+  - cogs/commands/anti_wl.py     → Footer (3 places)
+  - cogs/events/on_guild.py      → Footer
+  - cogs/events/stickymessage.py → Footer
+  - cogs/moderation/lock.py      → "Ariyan | Lockdown"
+  - cogs/commands/extra.py       → "Ariyan Manager Uptime"
+
+[3] DEVELOPER / FOUNDER INFO
+-----------------------------
+  OLD: 2 Founders - Ray, Evil Rexy
+  NEW: 1 Founder - Ariyan (https://discord.com/users/1383672814820655215)
+
+  Files Updated:
+  - cogs/events/mention.py  → Developer Info dropdown
+  - cogs/commands/stats.py   → Team Stats section
+
+[4] SUPPORT SERVER LINK
+------------------------
+  OLD: https://discord.gg/codexdev
+  NEW: https://discord.gg/PkDre8Juhp
+
+  Files Updated (14 files):
+  - config.yml
+  - utils/config.py
+  - cogs/commands/help.py
+  - cogs/commands/general.py
+  - cogs/commands/music.py
+  - cogs/commands/np.py
+  - cogs/commands/ai.py
+  - cogs/commands/tracking.py
+  - cogs/commands/messages.py
+  - cogs/commands/nitro.py
+  - cogs/events/mention.py
+  - cogs/events/on_guild.py
+  - cogs/events/auto.py
+  - cogs/events/autoblacklist.py
+
+[5] INVITE LINK
+---------------
+  OLD: Invite Zyrox X (client_id=1396114795102470196)
+  NEW: Invite Ariyan (client_id=1498197753774473308)
+
+  Files Updated:
+  - cogs/events/mention.py  → Links dropdown
+  - cogs/commands/general.py → Invite command
+
+[6] THEME COLOR
+---------------
+  OLD: 0xFF0000 (Red)
+  NEW: 0x87CEEB (Sky Blue)
+
+  Files Updated: 72 files across entire codebase
+  - All embeds, error messages, moderation, help, stats,
+    antinuke, AI, games, automod, etc.
+
+[7] AI CONFIGURATION
+--------------------
+  Bot Identity: "You are Ariyan"
+  Creator: "created by Ariyan"
+  Personality Placeholder: "how you want Ariyan to respond"
+  API: Groq (llama-3.3-70b-versatile)
+  API Key: Configured via GROQ_API_KEY env variable
+
+  Files Updated:
+  - cogs/commands/ai.py → System prompts, personality modal
+
+[8] ENVIRONMENT VARIABLES (.env)
+---------------------------------
+  TOKEN=MTQ5ODE5Nzc1Mzc3NDQ3MzMwOA.****
+  GROQ_API_KEY=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
+  GOOGLE_API_KEY= (Not Set - Gemini AI disabled)
+
+[9] KNOWN ISSUES
+----------------
+  - GOOGLE_API_KEY not set → Gemini AI features disabled
+  - Some Forbidden (403) errors in on_guild_join (missing perms)
+  - "Missing Permissions in CodeX | ZYROX X Emojis #2" (emoji server)
+  - Command log webhook: 404 Not Found (old webhook deleted)
+
+================================================================
+                    BOT IS FULLY OPERATIONAL
+              Branded and Running as "Ariyan"
+================================================================

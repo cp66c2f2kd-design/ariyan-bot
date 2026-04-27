@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ariyan Bot Dashboard</title>
+    <meta name="description" content="Ariyan — Advanced Discord Bot Dashboard with AI, Moderation & More">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app"><div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#3B9EFF;font-family:Orbitron,sans-serif;font-size:1.2rem">Loading Ariyan Bot...</div></div>
+    <script>
+        // Default fallback data
+        window.__DASH_DATA__ = {
+            botUser: 'Ariyan',
+            botId: '1498197753774473308',
+            avatar: '',
+            servers: 0,
+            users: 0,
+            ping: 0,
+            ram: 0,
+            uptime: '0h 0m',
+            commands: '350+',
+            runtime: 'Python 3.12 / discord.py',
+            prefix: '!',
+            language: 'hi',
+            timezone: 'Asia/Kolkata',
+            guildId: '',
+            guildName: 'My Server',
+            supportServer: 'https://discord.gg/PkDre8Juhp',
+            founder: 'Ariyan',
+            founderId: '1383672814820655215',
+            cogs: 0,
+            slashCommands: 89
+        };
+
+        // Fetch live data from bot API
+        async function loadBotData() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                Object.assign(window.__DASH_DATA__, data);
+            } catch(e) {
+                console.log('API not available, using defaults');
+            }
+            // Load app.js after data is ready
+            const script = document.createElement('script');
+            script.src = 'app.js';
+            document.body.appendChild(script);
+        }
+
+        // Auto-refresh data every 30 seconds
+        setInterval(async () => {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                Object.assign(window.__DASH_DATA__, data);
+                if(typeof render === 'function') render();
+            } catch(e) {}
+        }, 30000);
+
+        loadBotData();
+    </script>
+</body>
+</html>
