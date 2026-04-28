@@ -112,41 +112,6 @@ async def slash_invite(interaction: discord.Interaction):
     embed.set_footer(text=f"Requested by {interaction.user}", icon_url=interaction.user.display_avatar.url)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="avatar", description="Get a user's avatar")
-@discord.app_commands.describe(user="The user whose avatar you want to see")
-async def slash_avatar(interaction: discord.Interaction, user: discord.Member = None):
-    user = user or interaction.user
-    embed = discord.Embed(
-        title=f"🖼️ {user.display_name}'s Avatar",
-        color=0x87CEEB,
-        timestamp=datetime.utcnow()
-    )
-    embed.set_image(url=user.display_avatar.url)
-    embed.set_footer(text=f"Requested by {interaction.user}", icon_url=interaction.user.display_avatar.url)
-    await interaction.response.send_message(embed=embed)
-
-@tree.command(name="serverinfo", description="Get information about this server")
-async def slash_serverinfo(interaction: discord.Interaction):
-    guild = interaction.guild
-    if not guild:
-        return await interaction.response.send_message("This command can only be used in a server!", ephemeral=True)
-    
-    embed = discord.Embed(
-        title=f"🏠 {guild.name}",
-        color=0x87CEEB,
-        timestamp=datetime.utcnow()
-    )
-    if guild.icon:
-        embed.set_thumbnail(url=guild.icon.url)
-    embed.add_field(name="👑 Owner", value=f"{guild.owner.mention}" if guild.owner else "Unknown", inline=True)
-    embed.add_field(name="👥 Members", value=f"`{guild.member_count}`", inline=True)
-    embed.add_field(name="💬 Channels", value=f"`{len(guild.channels)}`", inline=True)
-    embed.add_field(name="😀 Emojis", value=f"`{len(guild.emojis)}`", inline=True)
-    embed.add_field(name="🎭 Roles", value=f"`{len(guild.roles)}`", inline=True)
-    embed.add_field(name="📅 Created", value=f"<t:{int(guild.created_at.timestamp())}:R>", inline=True)
-    embed.set_footer(text=f"ID: {guild.id}")
-    await interaction.response.send_message(embed=embed)
-
 # --- Event Handlers ---
 
 @client.event
