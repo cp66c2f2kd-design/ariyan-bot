@@ -63,7 +63,92 @@ async def update_stats():
         
         await asyncio.sleep(600) # Update every 10 minutes
 
+
+# --- Slash Commands (for Active Developer Badge & utility) ---
+@tree.command(name="ping", description="Check Ariyan's latency and response time")
+async def slash_ping(interaction: discord.Interaction):
+    latency = round(client.latency * 1000)
+    embed = discord.Embed(
+        title="🏓 Pong!",
+        description=f"**Latency:** `{latency}ms`",
+        color=0x87CEEB,
+        timestamp=datetime.utcnow()
+    )
+    embed.set_footer(text=f"Requested by {interaction.user}", icon_url=interaction.user.display_avatar.url)
+    await interaction.response.send_message(embed=embed)
+
+@tree.command(name="botinfo", description="Get information about Ariyan bot")
+async def slash_botinfo(interaction: discord.Interaction):
+    guild_count = len(client.guilds)
+    user_count = sum(g.member_count or 0 for g in client.guilds)
+    latency = round(client.latency * 1000)
+    
+    embed = discord.Embed(
+        title="💖 Ariyan Bot Info",
+        description="Tumhari pyaari Ariyan bot! 🥰",
+        color=0x87CEEB,
+        timestamp=datetime.utcnow()
+    )
+    embed.set_thumbnail(url=client.user.display_avatar.url)
+    embed.add_field(name="🏠 Servers", value=f"`{guild_count}`", inline=True)
+    embed.add_field(name="👥 Users", value=f"`{user_count}`", inline=True)
+    embed.add_field(name="🏓 Ping", value=f"`{latency}ms`", inline=True)
+    embed.add_field(name="🤖 Bot", value=f"{client.user.mention}", inline=True)
+    embed.add_field(name="🔧 Commands", value="`350+`", inline=True)
+    embed.add_field(name="💻 Runtime", value="`Python 3.12`", inline=True)
+    embed.set_footer(text=f"Requested by {interaction.user}", icon_url=interaction.user.display_avatar.url)
+    await interaction.response.send_message(embed=embed)
+
+@tree.command(name="invite", description="Get Ariyan's invite link")
+async def slash_invite(interaction: discord.Interaction):
+    invite_url = f"https://discord.com/oauth2/authorize?client_id={client.user.id}&permissions=8&scope=bot%20applications.commands"
+    embed = discord.Embed(
+        title="💕 Invite Ariyan",
+        description=f"Mujhe apne server mein add karo baby! 🥰\n\n[**Click here to invite**]({invite_url})",
+        color=0x87CEEB,
+        timestamp=datetime.utcnow()
+    )
+    embed.set_thumbnail(url=client.user.display_avatar.url)
+    embed.set_footer(text=f"Requested by {interaction.user}", icon_url=interaction.user.display_avatar.url)
+    await interaction.response.send_message(embed=embed)
+
+@tree.command(name="avatar", description="Get a user's avatar")
+@discord.app_commands.describe(user="The user whose avatar you want to see")
+async def slash_avatar(interaction: discord.Interaction, user: discord.Member = None):
+    user = user or interaction.user
+    embed = discord.Embed(
+        title=f"🖼️ {user.display_name}'s Avatar",
+        color=0x87CEEB,
+        timestamp=datetime.utcnow()
+    )
+    embed.set_image(url=user.display_avatar.url)
+    embed.set_footer(text=f"Requested by {interaction.user}", icon_url=interaction.user.display_avatar.url)
+    await interaction.response.send_message(embed=embed)
+
+@tree.command(name="serverinfo", description="Get information about this server")
+async def slash_serverinfo(interaction: discord.Interaction):
+    guild = interaction.guild
+    if not guild:
+        return await interaction.response.send_message("This command can only be used in a server!", ephemeral=True)
+    
+    embed = discord.Embed(
+        title=f"🏠 {guild.name}",
+        color=0x87CEEB,
+        timestamp=datetime.utcnow()
+    )
+    if guild.icon:
+        embed.set_thumbnail(url=guild.icon.url)
+    embed.add_field(name="👑 Owner", value=f"{guild.owner.mention}" if guild.owner else "Unknown", inline=True)
+    embed.add_field(name="👥 Members", value=f"`{guild.member_count}`", inline=True)
+    embed.add_field(name="💬 Channels", value=f"`{len(guild.channels)}`", inline=True)
+    embed.add_field(name="😀 Emojis", value=f"`{len(guild.emojis)}`", inline=True)
+    embed.add_field(name="🎭 Roles", value=f"`{len(guild.roles)}`", inline=True)
+    embed.add_field(name="📅 Created", value=f"<t:{int(guild.created_at.timestamp())}:R>", inline=True)
+    embed.set_footer(text=f"ID: {guild.id}")
+    await interaction.response.send_message(embed=embed)
+
 # --- Event Handlers ---
+
 @client.event
 async def on_ready():
     await client.wait_until_ready()
