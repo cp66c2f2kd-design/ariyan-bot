@@ -7,6 +7,7 @@ import asyncio
 os.makedirs('db', exist_ok=True)
 
 async def setup_db():
+  # Create all required database tables on startup (Render wipes DB on deploy)
   async with aiosqlite.connect('db/prefix.db') as db:
     await db.execute('''
       CREATE TABLE IF NOT EXISTS prefixes (
@@ -14,6 +15,26 @@ async def setup_db():
         prefix TEXT NOT NULL
       )
     ''')
+    await db.commit()
+
+  async with aiosqlite.connect('db/np.db') as db:
+    await db.execute('CREATE TABLE IF NOT EXISTS np (id INTEGER PRIMARY KEY)')
+    await db.commit()
+
+  async with aiosqlite.connect('db/block.db') as db:
+    await db.execute('CREATE TABLE IF NOT EXISTS user_blacklist (user_id TEXT PRIMARY KEY)')
+    await db.execute('CREATE TABLE IF NOT EXISTS guild_blacklist (guild_id TEXT PRIMARY KEY)')
+    await db.commit()
+
+  async with aiosqlite.connect('db/topcheck.db') as db:
+    await db.execute('CREATE TABLE IF NOT EXISTS topcheck (guild_id INTEGER PRIMARY KEY, enabled INTEGER DEFAULT 0)')
+    await db.commit()
+
+  async with aiosqlite.connect('db/ignore.db') as db:
+    await db.execute('CREATE TABLE IF NOT EXISTS ignored_channels (guild_id INTEGER, channel_id INTEGER, PRIMARY KEY (guild_id, channel_id))')
+    await db.execute('CREATE TABLE IF NOT EXISTS ignored_users (guild_id INTEGER, user_id INTEGER, PRIMARY KEY (guild_id, user_id))')
+    await db.execute('CREATE TABLE IF NOT EXISTS ignored_commands (guild_id INTEGER, command_name TEXT, PRIMARY KEY (guild_id, command_name))')
+    await db.execute('CREATE TABLE IF NOT EXISTS bypassed_users (guild_id INTEGER, user_id INTEGER, PRIMARY KEY (guild_id, user_id))')
     await db.commit()
 
 
