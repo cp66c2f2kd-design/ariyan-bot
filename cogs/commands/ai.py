@@ -413,7 +413,7 @@ class AI (commands .Cog ):
             await self ._store_conversation_message (user_id ,guild_id ,"user",content )
 
 
-            history =await self ._get_conversation_history (user_id ,guild_id ,limit =30 )
+            history =await self ._get_conversation_history (user_id ,guild_id ,limit =10 )
 
             async with message .channel .typing ():
                 response =await self ._get_response (content ,history ,guild_id ,user_id )
@@ -485,56 +485,123 @@ class AI (commands .Cog ):
             logger .error (f"Gemini AI error: {e}")
             return f"Sorry, I encountered an error while processing your request: {str(e)}"
 
-    async def _get_groq_response (self ,message :str ,context_messages :list )->str :
-        """Get a response from Groq AI with full context."""
-        try :
-            if not self .groq_api_key :
+    # --- Fallback models list (ordered: big -> small) ---
+    GROQ_MODELS = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "gemma2-9b-it",
+    ]
+
+    async def _get_groq_response(self, message: str, context_messages: list) -> str:
+        """Get a response from Groq AI with automatic rate-limit retry & fallback models."""
+        try:
+            if not self.groq_api_key:
                 return "Groq API key not configured. Please set the GROQ_API_KEY environment variable."
 
-            url ="https://api.groq.com/openai/v1/chat/completions"
-            headers ={
-            "Authorization":f"Bearer {self.groq_api_key}",
-            "Content-Type":"application/json"
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {self.groq_api_key}",
+                "Content-Type": "application/json"
             }
 
-
-            api_messages =[]
-            for msg in context_messages :
-
-                if isinstance (msg ,dict ):
-                    if "content"in msg :
-                        api_messages .append ({
-                        "role":msg ["role"],
-                        "content":msg ["content"]
+            # --- Build messages list ---
+            api_messages = []
+            for msg in context_messages:
+                if isinstance(msg, dict):
+                    if "content" in msg:
+                        api_messages.append({
+                            "role": msg["role"],
+                            "content": msg["content"]
                         })
-                    elif "parts"in msg and msg ["parts"]:
-
-                        content =msg ["parts"][0 ].get ("text","")if msg ["parts"]else ""
-                        api_messages .append ({
-                        "role":msg ["role"],
-                        "content":content 
+                    elif "parts" in msg and msg["parts"]:
+                        content = msg["parts"][0].get("text", "") if msg["parts"] else ""
+                        api_messages.append({
+                            "role": msg["role"],
+                            "content": content
                         })
 
-            data ={
-            "model":"llama-3.3-70b-versatile",
-            "messages":api_messages ,
-            "temperature":0.8 ,
-            "max_tokens":1000 ,
-            "top_p":0.9 
-            }
+            # --- Trim history to save tokens (keep system + last 6 msgs) ---
+            system_msgs = [m for m in api_messages if m["role"] == "system"]
+            non_system = [m for m in api_messages if m["role"] != "system"]
+            if len(non_system) > 6:
+                non_system = non_system[-6:]
+            api_messages = system_msgs + non_system
 
-            async with aiohttp .ClientSession ()as session :
-                async with session .post (url ,headers =headers ,json =data )as response :
-                    if response .status ==200 :
-                        json_response =await response .json ()
-                        return json_response ['choices'][0 ]['message']['content'].strip ()
-                    else :
-                        error_message =await response .text ()
-                        logger .error (f"Groq API error: {response.status} - {error_message}")
-                        return f"Sorry, I encountered an error while processing your request: {response.status} - {error_message}"
-        except Exception as e :
-            logger .error (f"Groq AI error: {e}")
-            return f"Sorry, I encountered an error while processing your request: {str(e)}"
+            # --- Rate-limit aware model selection ---
+            if not hasattr(self, '_model_cooldowns'):
+                self._model_cooldowns = {}  # model -> cooldown_until timestamp
+
+            now = asyncio.get_event_loop().time()
+
+            # Build ordered model list, skipping models on cooldown
+            models_to_try = []
+            for m in self.GROQ_MODELS:
+                cooldown_until = self._model_cooldowns.get(m, 0)
+                if now >= cooldown_until:
+                    models_to_try.append(m)
+            # If all models are on cooldown, try them all anyway (cooldown may have expired on server)
+            if not models_to_try:
+                models_to_try = list(self.GROQ_MODELS)
+
+            last_error = None
+
+            async with aiohttp.ClientSession() as session:
+                for model in models_to_try:
+                    data = {
+                        "model": model,
+                        "messages": api_messages,
+                        "temperature": 0.8,
+                        "max_tokens": 500,  # Reduced to save daily token quota
+                        "top_p": 0.9
+                    }
+
+                    max_retries = 2
+                    for attempt in range(max_retries):
+                        try:
+                            async with session.post(url, headers=headers, json=data) as response:
+                                if response.status == 200:
+                                    json_response = await response.json()
+                                    return json_response['choices'][0]['message']['content'].strip()
+                                elif response.status == 429:
+                                    # Rate limited — parse retry-after or use default
+                                    error_body = await response.text()
+                                    logger.warning(f"Groq rate limit hit on {model}: {error_body}")
+
+                                    # Put this model on cooldown (10 minutes)
+                                    self._model_cooldowns[model] = asyncio.get_event_loop().time() + 600
+
+                                    # Try to parse retry-after from headers
+                                    retry_after = response.headers.get("retry-after")
+                                    if retry_after:
+                                        wait_time = min(float(retry_after), 15)
+                                    else:
+                                        wait_time = min(3 * (attempt + 1), 10)
+
+                                    if attempt < max_retries - 1:
+                                        await asyncio.sleep(wait_time)
+                                        continue
+                                    else:
+                                        last_error = f"Rate limited on {model}"
+                                        break  # Try next model
+                                else:
+                                    error_message = await response.text()
+                                    logger.error(f"Groq API error on {model}: {response.status} - {error_message}")
+                                    last_error = f"{response.status} - {error_message}"
+                                    break  # Try next model
+                        except asyncio.TimeoutError:
+                            last_error = f"Timeout on {model}"
+                            break
+                        except Exception as e:
+                            last_error = str(e)
+                            break
+
+            # All models failed — return friendly message instead of raw error
+            logger.error(f"All Groq models failed. Last error: {last_error}")
+            return "Abhi thoda busy hoon baby, thodi der baad try karo 🥺💕"
+
+        except Exception as e:
+            logger.error(f"Groq AI error: {e}")
+            return "Kuch gadbad ho gayi yaar, thodi der baad try karo 🥺"
 
     async def _get_response (self ,message :str ,history :list ,guild_id :int ,user_id :int =None )->str :
         try :
