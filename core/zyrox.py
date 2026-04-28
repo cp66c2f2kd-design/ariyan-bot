@@ -1,5 +1,4 @@
 from __future__ import annotations
-import os
 from discord.ext import commands, tasks
 import discord
 import aiohttp
@@ -44,11 +43,6 @@ class zyrox(commands.AutoShardedBot):
         self.status_list = []
 
     async def setup_hook(self):
-        # Ensure db directory and np table exist (Render wipes files on deploy)
-        os.makedirs('db', exist_ok=True)
-        async with aiosqlite.connect('db/np.db') as db:
-            await db.execute("CREATE TABLE IF NOT EXISTS np (id INTEGER PRIMARY KEY)")
-            await db.commit()
         await self.load_extensions()
         self.status_task.start()
 
@@ -93,30 +87,19 @@ class zyrox(commands.AutoShardedBot):
     async def get_prefix(self, message: discord.Message):
         if message.guild:
             guild_id = message.guild.id
-            try:
-                async with aiosqlite.connect('db/np.db') as db:
-                    await db.execute("CREATE TABLE IF NOT EXISTS np (id INTEGER PRIMARY KEY)")
-                    async with db.execute("SELECT id FROM np WHERE id = ?", (message.author.id,)) as cursor:
-                        row = await cursor.fetchone()
-            except Exception:
-                row = None
-            try:
-                data = await getConfig(guild_id)
-                prefix = data["prefix"]
-            except Exception:
-                prefix = ">"
+            async with aiosqlite.connect('db/np.db') as db:
+                async with db.execute("SELECT id FROM np WHERE id = ?", (message.author.id,)) as cursor:
+                    row = await cursor.fetchone()
+            data = await getConfig(guild_id)
+            prefix = data["prefix"]
             if row:
                 return commands.when_mentioned_or(prefix, '')(self, message)
             else:
                 return commands.when_mentioned_or(prefix)(self, message)
         else:
-            try:
-                async with aiosqlite.connect('db/np.db') as db:
-                    await db.execute("CREATE TABLE IF NOT EXISTS np (id INTEGER PRIMARY KEY)")
-                    async with db.execute("SELECT id FROM np WHERE id = ?", (message.author.id,)) as cursor:
-                        row = await cursor.fetchone()
-            except Exception:
-                row = None
+            async with aiosqlite.connect('db/np.db') as db:
+                async with db.execute("SELECT id FROM np WHERE id = ?", (message.author.id,)) as cursor:
+                    row = await cursor.fetchone()
             if row:
                 return commands.when_mentioned_or('?', '')(self, message)
             else:

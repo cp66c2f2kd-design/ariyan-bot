@@ -22,31 +22,11 @@ client = AsyncOpenAI(
     api_key=os.environ.get("GROQ_API_KEY", "nah-ha"),
 )
 
-
-# Fallback models (big -> small)
-GROQ_FALLBACK_MODELS = [
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
-    "gemma2-9b-it",
-]
-
-# Track model cooldowns globally
-_model_cooldowns = {}
-
 async def generate_response(instructions, history):
-    import time as _time
-
     messages = [
             {"role": "system", "name": "instructions", "content": instructions},
             *history,
         ]
-
-    # Trim history to save tokens (keep system + last 6 user/assistant msgs)
-    system_msgs = [m for m in messages if m.get("role") == "system"]
-    non_system = [m for m in messages if m.get("role") != "system"]
-    if len(non_system) > 6:
-        non_system = non_system[-6:]
-    messages = system_msgs + non_system
 
     tools = [
         {
@@ -67,76 +47,42 @@ async def generate_response(instructions, history):
             },
         }
     ]
+    response = await client.chat.completions.create(
+        model=config['MODEL_ID'],
+        messages=messages,        
+        tools=tools,
+        tool_choice="auto",
+    )
+    response_message = response.choices[0].message
+    tool_calls = response_message.tool_calls
 
-    now = _time.time()
+    if tool_calls:
+        available_functions = {
+            "searchtool": duckduckgotool,
+        }
+        messages.append(response_message)
 
-    # Build ordered model list, skipping models on cooldown
-    models_to_try = [m for m in GROQ_FALLBACK_MODELS if now >= _model_cooldowns.get(m, 0)]
-    if not models_to_try:
-        models_to_try = list(GROQ_FALLBACK_MODELS)
-
-    last_error = None
-
-    for model_id in models_to_try:
-        for attempt in range(2):
-            try:
-                response = await client.chat.completions.create(
-                    model=model_id,
-                    messages=messages,
-                    tools=tools,
-                    tool_choice="auto",
-                    max_tokens=500,
-                )
-                response_message = response.choices[0].message
-                tool_calls = response_message.tool_calls
-
-                if tool_calls:
-                    available_functions = {
-                        "searchtool": duckduckgotool,
-                    }
-                    messages.append(response_message)
-
-                    for tool_call in tool_calls:
-                        function_name = tool_call.function.name
-                        function_to_call = available_functions[function_name]
-                        function_args = json.loads(tool_call.function.arguments)
-                        function_response = await function_to_call(
-                            query=function_args.get("query")
-                        )
-                        messages.append(
-                            {
-                                "tool_call_id": tool_call.id,
-                                "role": "tool",
-                                "name": function_name,
-                                "content": function_response,
-                            }
-                        )
-                    second_response = await client.chat.completions.create(
-                        model=model_id,
-                        messages=messages,
-                        max_tokens=500,
-                    )
-                    return second_response.choices[0].message.content
-                return response_message.content
-
-            except Exception as e:
-                error_str = str(e)
-                if "429" in error_str or "rate_limit" in error_str.lower():
-                    # Rate limited — cooldown this model for 10 minutes
-                    _model_cooldowns[model_id] = _time.time() + 600
-                    if attempt == 0:
-                        import asyncio
-                        await asyncio.sleep(3)
-                        continue
-                    last_error = error_str
-                    break  # Try next model
-                else:
-                    last_error = error_str
-                    break  # Try next model
-
-    # All models failed
-    return "Abhi thoda busy hoon baby, thodi der baad try karo 🥺💕"
-
+        for tool_call in tool_calls:
+            function_name = tool_call.function.name
+            function_to_call = available_functions[function_name]
+            function_args = json.loads(tool_call.function.arguments)
+            function_response = await function_to_call(
+                query=function_args.get("query")
+            )
+            messages.append(
+                {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": function_response,
+                }
+            )
+        second_response = await client.chat.completions.create(
+            model=config['MODEL_ID'],
+            messages=messages
+        ) 
+        return second_response.choices[0].message.content
+    return response_message.content
 
 async def duckduckgotool(query) -> str:
     if config['INTERNET_ACCESS']:

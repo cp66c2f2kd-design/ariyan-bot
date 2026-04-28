@@ -63,57 +63,19 @@ async def update_stats():
         
         await asyncio.sleep(600) # Update every 10 minutes
 
-
-# --- Slash Commands (for Active Developer Badge & utility) ---
-@tree.command(name="ping", description="Check Ariyan's latency and response time")
+# --- Slash Command (Active Developer Badge) ---
+@tree.command(name="ping", description="Check Ariyan's latency")
 async def slash_ping(interaction: discord.Interaction):
     latency = round(client.latency * 1000)
     embed = discord.Embed(
         title="🏓 Pong!",
         description=f"**Latency:** `{latency}ms`",
-        color=0x87CEEB,
-        timestamp=datetime.utcnow()
+        color=0x87CEEB
     )
-    embed.set_footer(text=f"Requested by {interaction.user}", icon_url=interaction.user.display_avatar.url)
-    await interaction.response.send_message(embed=embed)
-
-@tree.command(name="botinfo", description="Get information about Ariyan bot")
-async def slash_botinfo(interaction: discord.Interaction):
-    guild_count = len(client.guilds)
-    user_count = sum(g.member_count or 0 for g in client.guilds)
-    latency = round(client.latency * 1000)
-    
-    embed = discord.Embed(
-        title="💖 Ariyan Bot Info",
-        description="Tumhari pyaari Ariyan bot! 🥰",
-        color=0x87CEEB,
-        timestamp=datetime.utcnow()
-    )
-    embed.set_thumbnail(url=client.user.display_avatar.url)
-    embed.add_field(name="🏠 Servers", value=f"`{guild_count}`", inline=True)
-    embed.add_field(name="👥 Users", value=f"`{user_count}`", inline=True)
-    embed.add_field(name="🏓 Ping", value=f"`{latency}ms`", inline=True)
-    embed.add_field(name="🤖 Bot", value=f"{client.user.mention}", inline=True)
-    embed.add_field(name="🔧 Commands", value="`350+`", inline=True)
-    embed.add_field(name="💻 Runtime", value="`Python 3.12`", inline=True)
-    embed.set_footer(text=f"Requested by {interaction.user}", icon_url=interaction.user.display_avatar.url)
-    await interaction.response.send_message(embed=embed)
-
-@tree.command(name="invite", description="Get Ariyan's invite link")
-async def slash_invite(interaction: discord.Interaction):
-    invite_url = f"https://discord.com/oauth2/authorize?client_id={client.user.id}&permissions=8&scope=bot%20applications.commands"
-    embed = discord.Embed(
-        title="💕 Invite Ariyan",
-        description=f"Mujhe apne server mein add karo baby! 🥰\n\n[**Click here to invite**]({invite_url})",
-        color=0x87CEEB,
-        timestamp=datetime.utcnow()
-    )
-    embed.set_thumbnail(url=client.user.display_avatar.url)
     embed.set_footer(text=f"Requested by {interaction.user}", icon_url=interaction.user.display_avatar.url)
     await interaction.response.send_message(embed=embed)
 
 # --- Event Handlers ---
-
 @client.event
 async def on_ready():
     await client.wait_until_ready()
