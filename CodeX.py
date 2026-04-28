@@ -64,12 +64,12 @@ async def update_stats():
         await asyncio.sleep(600) # Update every 10 minutes
 
 # --- Slash Command (Active Developer Badge) ---
-@tree.command(name="ping", description="Check Ariyan's latency")
-async def slash_ping(interaction: discord.Interaction):
+@tree.command(name="activedev", description="Check if Ariyan is active for Developer Badge")
+async def slash_activedev(interaction: discord.Interaction):
     latency = round(client.latency * 1000)
     embed = discord.Embed(
-        title="🏓 Pong!",
-        description=f"**Latency:** `{latency}ms`",
+        title="✅ Active Developer",
+        description=f"Ariyan is active! **Latency:** `{latency}ms`",
         color=0x87CEEB
     )
     embed.set_footer(text=f"Requested by {interaction.user}", icon_url=interaction.user.display_avatar.url)
