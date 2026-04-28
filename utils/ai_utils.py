@@ -19,7 +19,7 @@ internet_access = config['INTERNET_ACCESS']
 
 client = AsyncOpenAI(
     base_url=config['API_BASE_URL'],
-    api_key="nah-ha",
+    api_key=os.environ.get("GROQ_API_KEY", "nah-ha"),
 )
 
 async def generate_response(instructions, history):
