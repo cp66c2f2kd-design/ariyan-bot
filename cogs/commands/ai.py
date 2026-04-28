@@ -674,8 +674,13 @@ RULES:
                 await ctx.send(f"{ai_reply}\n\n*Voice not available - edge-tts not installed*")
                 return
 
-            # Convert to speech using Hindi female voice
-            communicate = edge_tts.Communicate(ai_reply, voice="hi-IN-SwaraNeural")
+            # Convert to speech using cute Indian girl voice (expressive + higher pitch)
+            communicate = edge_tts.Communicate(
+                ai_reply, 
+                voice="en-IN-NeerjaExpressiveNeural",
+                pitch="+15Hz",
+                rate="+5%"
+            )
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
                 tmp_path = tmp.name
 
