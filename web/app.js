@@ -265,3 +265,5 @@ return `<div class="page-wrap">
 </div>`;}
 
 document.addEventListener('DOMContentLoaded',()=>{render();initSock();});
+// Also render immediately if DOM is already loaded (dynamic script injection)
+if(document.readyState==='complete'||document.readyState==='interactive'){render();initSock();}
