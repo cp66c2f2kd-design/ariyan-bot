@@ -485,8 +485,14 @@ class AI (commands .Cog ):
             logger .error (f"Gemini AI error: {e}")
             return f"Sorry, I encountered an error while processing your request: {str(e)}"
 
+    GROQ_MODELS = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "gemma2-9b-it",
+    ]
+
     async def _get_groq_response (self ,message :str ,context_messages :list )->str :
-        """Get a response from Groq AI with full context."""
+        """Get a response from Groq AI with fallback models."""
         try :
             if not self .groq_api_key :
                 return "Groq API key not configured. Please set the GROQ_API_KEY environment variable."
@@ -497,10 +503,8 @@ class AI (commands .Cog ):
             "Content-Type":"application/json"
             }
 
-
             api_messages =[]
             for msg in context_messages :
-
                 if isinstance (msg ,dict ):
                     if "content"in msg :
                         api_messages .append ({
@@ -508,33 +512,62 @@ class AI (commands .Cog ):
                         "content":msg ["content"]
                         })
                     elif "parts"in msg and msg ["parts"]:
-
                         content =msg ["parts"][0 ].get ("text","")if msg ["parts"]else ""
                         api_messages .append ({
                         "role":msg ["role"],
                         "content":content 
                         })
 
-            data ={
-            "model":"llama-3.3-70b-versatile",
-            "messages":api_messages ,
-            "temperature":0.8 ,
-            "max_tokens":1000 ,
-            "top_p":0.9 
-            }
+            if not hasattr(self, '_model_cooldowns'):
+                self._model_cooldowns = {}
+
+            now = asyncio.get_event_loop().time()
+            models_to_try = [m for m in self.GROQ_MODELS if now >= self._model_cooldowns.get(m, 0)]
+            if not models_to_try:
+                models_to_try = list(self.GROQ_MODELS)
+
+            last_error = None
 
             async with aiohttp .ClientSession ()as session :
-                async with session .post (url ,headers =headers ,json =data )as response :
-                    if response .status ==200 :
-                        json_response =await response .json ()
-                        return json_response ['choices'][0 ]['message']['content'].strip ()
-                    else :
-                        error_message =await response .text ()
-                        logger .error (f"Groq API error: {response.status} - {error_message}")
-                        return f"Sorry, I encountered an error while processing your request: {response.status} - {error_message}"
+                for model in models_to_try:
+                    data ={
+                    "model":model,
+                    "messages":api_messages ,
+                    "temperature":0.8 ,
+                    "max_tokens":1000 ,
+                    "top_p":0.9 
+                    }
+
+                    for attempt in range(2):
+                        try:
+                            async with session .post (url ,headers =headers ,json =data )as response :
+                                if response .status ==200 :
+                                    json_response =await response .json ()
+                                    return json_response ['choices'][0 ]['message']['content'].strip ()
+                                elif response.status == 429:
+                                    self._model_cooldowns[model] = asyncio.get_event_loop().time() + 600
+                                    if attempt == 0:
+                                        await asyncio.sleep(3)
+                                        continue
+                                    last_error = f"Rate limited on {model}"
+                                    break
+                                else :
+                                    error_message =await response .text ()
+                                    logger .error (f"Groq API error on {model}: {response.status} - {error_message}")
+                                    last_error = f"{response.status} - {error_message}"
+                                    break
+                        except asyncio.TimeoutError:
+                            last_error = f"Timeout on {model}"
+                            break
+                        except Exception as e:
+                            last_error = str(e)
+                            break
+
+            logger.error(f"All Groq models failed. Last error: {last_error}")
+            return "Abhi thoda busy hoon, thodi der baad try karo 🥺"
         except Exception as e :
             logger .error (f"Groq AI error: {e}")
-            return f"Sorry, I encountered an error while processing your request: {str(e)}"
+            return "Kuch gadbad ho gayi yaar, thodi der baad try karo 🥺"
 
     async def _get_response (self ,message :str ,history :list ,guild_id :int ,user_id :int =None )->str :
         try :
