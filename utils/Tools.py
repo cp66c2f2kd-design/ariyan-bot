@@ -4,6 +4,7 @@ from discord.ext import commands
 from core import Context
 import aiosqlite
 import asyncio
+os.makedirs('db', exist_ok=True)
 
 async def setup_db():
   async with aiosqlite.connect('db/prefix.db') as db:
