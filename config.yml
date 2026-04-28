@@ -1,3 +1,4 @@
+GROQ_API_KEY: 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
 API_BASE_URL: https://api.groq.com/openai/v1/
 INTERNET_ACCESS: true 
 MAX_SEARCH_RESULTS: 4 

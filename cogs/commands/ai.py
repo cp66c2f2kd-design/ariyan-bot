@@ -247,7 +247,15 @@ class AI (commands .Cog ):
             logger .warning ("GOOGLE_API_KEY environment variable not set. Gemini AI will not work.")
         self .groq_api_key =os .getenv ("GROQ_API_KEY")
         if not self .groq_api_key :
-            logger .warning ("GROQ_API_KEY environment variable not set. Groq AI will not work.")
+            try :
+                import yaml
+                with open ('config.yml','r',encoding ='utf-8')as f :
+                    _cfg =yaml .safe_load (f )
+                self .groq_api_key =_cfg .get ("GROQ_API_KEY","")
+            except Exception :
+                pass 
+        if not self .groq_api_key :
+            logger .warning ("GROQ_API_KEY not found in env or config.yml. Groq AI will not work.")
         self .chatbot_enabled ={}
         self .chatbot_channels ={}
         self .conversation_history ={}
