@@ -30,23 +30,30 @@
             supportServer: 'https://discord.gg/PkDre8Juhp',
             founder: 'Ariyan',
             founderId: '1383672814820655215',
-            cogs: 0,
+            cogs: 93,
             slashCommands: 89
         };
 
-        // Fetch live data from bot API
-        async function loadBotData() {
-            try {
-                const res = await fetch('/api/stats');
-                const data = await res.json();
-                Object.assign(window.__DASH_DATA__, data);
-            } catch(e) {
-                console.log('API not available, using defaults');
-            }
-            // Load app.js after data is ready
+        // Load app.js IMMEDIATELY with defaults, then update with live data
+        (function() {
             const script = document.createElement('script');
             script.src = 'app.js';
             document.body.appendChild(script);
+        })();
+
+        // Fetch live data in background and re-render
+        async function loadBotData() {
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 8000);
+                const res = await fetch('/api/stats', { signal: controller.signal });
+                clearTimeout(timeout);
+                const data = await res.json();
+                Object.assign(window.__DASH_DATA__, data);
+                if(typeof render === 'function') render();
+            } catch(e) {
+                console.log('API not available, using defaults');
+            }
         }
 
         // Auto-refresh data every 30 seconds
