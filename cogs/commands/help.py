@@ -145,7 +145,8 @@ class HelpCommand(commands.HelpCommand):
               " <:zmc:1448964387426537474> `»` Minecraft <:New:1448949337395695616>\n"
               " <:zmsg:1448964399166394483> `»` Joindm <:New:1448949337395695616>\n"
               " <:zcircle:1448964410155470848> `»` Birthday <:New:1448949337395695616>\n"
-              " <:zcircle:1448951351601270814> `»` Customrole\n"           
+              " <:zcircle:1448951351601270814> `»` Customrole\n"
+              " <:zyroxthunder:1448949415200034907> `»` FF Info <:New:1448949337395695616>\n"           
     )
 
     embed.set_footer(

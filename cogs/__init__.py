@@ -69,6 +69,7 @@ from .commands.Birthday import Birthdays
 from .commands.nitro import Nitro
 from .commands.image import ImageCommands
 from .commands.youtube import Youtube
+from .commands.info import Info
 #____________ Events _____________
 
 #from .events.autoblacklist import AutoBlacklist
@@ -117,6 +118,7 @@ from .zyrox.encryption import _encrypt
 from .zyrox.mc import _mc
 from .zyrox.joindm import _joindm
 from .zyrox.birth import _birth
+from .zyrox.ffinfo import _ffinfo
 
 #########ANTINUKE#########
 
@@ -248,6 +250,7 @@ async def setup(bot: zyrox):
   await bot.add_cog(Nitro(bot))
   await bot.add_cog(ImageCommands(bot))
   await bot.add_cog(Youtube(bot))
+  await bot.add_cog(Info(bot))
 
   await bot.add_cog(_antinuke(bot))
   await bot.add_cog(_extra(bot))
@@ -278,6 +281,7 @@ async def setup(bot: zyrox):
   await bot.add_cog(_mc(bot))
   await bot.add_cog(_joindm(bot))
   await bot.add_cog(_birth(bot))
+  await bot.add_cog(_ffinfo(bot))
 
 
   
