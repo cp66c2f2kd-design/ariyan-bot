@@ -9,6 +9,10 @@ from datetime import datetime
 from utils.Tools import *
 
 
+# Supported regions for Free Fire
+VALID_REGIONS = ["IND", "BR", "SG", "RU", "ID", "TW", "US", "VN", "TH", "ME", "PK", "CIS", "BD"]
+
+
 def format_dt(ts):
     """Convert a timestamp to a readable date string."""
     try:
@@ -25,37 +29,41 @@ class Info(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.color = 0xFF0000
-        self.api_base = os.getenv("INFO_API_URL", "http://192.168.0.100:7779")
+        self.api_base = os.getenv("INFO_API_URL", "https://free-ff-api-src-5plp.onrender.com")
         self.dress_api = os.getenv("DRESS_API_URL", "https://www.farhanexe.xyz/apis/dress")
 
     @commands.hybrid_command(
         name="ffinfo",
         aliases=["playerinfo", "ff"],
-        help="Get Free Fire player info by UID.",
-        usage="ffinfo <uid>"
+        help="Get Free Fire player info by UID. Usage: ffinfo <uid> [region]",
+        usage="ffinfo <uid> [region]"
     )
     @blacklist_check()
     @ignore_check()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def info(self, ctx, uid: str = None):
+    async def info(self, ctx, uid: str = None, region: str = "IND"):
         """Fetch detailed Free Fire player information using a UID."""
 
         if not uid:
             embed = discord.Embed(
                 title="❌ Missing UID",
-                description="Please enter a UID: `info 12345678`",
+                description="Please enter a UID: `ffinfo 12345678`\nOptional region: `ffinfo 12345678 IND`\n\n**Regions:** " + ", ".join(f"`{r}`" for r in VALID_REGIONS),
                 color=0xF50505
             )
-            await ctx.reply(embed=embed, delete_after=10)
+            await ctx.reply(embed=embed, delete_after=15)
             return
 
+        region = region.upper()
+        if region not in VALID_REGIONS:
+            region = "IND"
+
         async with ctx.typing():
-            api_url = f"{self.api_base}/info?uid={uid}"
+            api_url = f"{self.api_base}/api/v1/account?region={region}&uid={uid}"
             dress_url = f"{self.dress_api}?uid={uid}"
 
             async with aiohttp.ClientSession() as session:
                 try:
-                    async with session.get(api_url, timeout=aiohttp.ClientTimeout(total=15)) as response:
+                    async with session.get(api_url, timeout=aiohttp.ClientTimeout(total=20)) as response:
                         if response.status == 200:
                             data = await response.json()
 
@@ -75,7 +83,12 @@ class Info(commands.Cog):
 
                             # Skills list
                             skills = profile.get('equipedSkills', [])
-                            skill_list = ", ".join([str(s.get('skillId')) for s in skills]) if skills else "None"
+                            if skills and isinstance(skills[0], dict):
+                                skill_list = ", ".join([str(s.get('skillId')) for s in skills])
+                            elif skills:
+                                skill_list = ", ".join([str(s) for s in skills])
+                            else:
+                                skill_list = "None"
 
                             # Weapon skins
                             weapons = basic.get('weaponSkinShows', [])
@@ -88,13 +101,13 @@ class Info(commands.Cog):
                             embed = discord.Embed(color=self.color)
 
                             description = (
-                                f"**ARIYAN - INFO BOT v2**\n\n"
+                                f"**ARIYAN - FF INFO v2**\n\n"
 
                                 "🩷 **Basic Info** 🩷\n"
                                 f"🟣 Nickname: `{basic.get('nickname', 'N/A')}`\n"
                                 f"🟣 UID: `{basic.get('accountId', 'N/A')}`\n"
                                 f"🟣 Level: {basic.get('level', 'N/A')} (Exp: {basic.get('exp', '0')})\n"
-                                f"🟣 Region: {basic.get('region', 'N/A')}\n"
+                                f"🟣 Region: {basic.get('region', region)}\n"
                                 f"🟣 Likes: {basic.get('liked', '0')}\n"
                                 f"🟣 Honor Score: {credit.get('creditScore', '100')}\n\n"
 
