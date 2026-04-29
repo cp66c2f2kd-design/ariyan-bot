@@ -123,7 +123,7 @@ class Info(commands.Cog):
                             prime_str = f"Level {prime_level}" if prime_level else "None"
 
                             description = (
-                                f"**ARIYAN - FF INFO v2**\n\n"
+                                f"**mahiru - FF INFO v1**\n\n"
 
                                 "🩷 **Basic Info** 🩷\n"
                                 f"🟣 Nickname: `{basic.get('nickname', 'N/A')}`\n"
