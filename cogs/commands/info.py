@@ -29,7 +29,7 @@ class Info(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.color = 0xFF0000
-        self.api_base = os.getenv("INFO_API_URL", "https://free-ff-api-src-5plp.onrender.com")
+        self.api_base = os.getenv("INFO_API_URL", "https://api.farhanexe.xyz")
         self.dress_api = os.getenv("DRESS_API_URL", "https://www.farhanexe.xyz/apis/dress")
 
     @commands.hybrid_command(
@@ -58,7 +58,7 @@ class Info(commands.Cog):
             region = "IND"
 
         async with ctx.typing():
-            api_url = f"{self.api_base}/api/v1/account?region={region}&uid={uid}"
+            api_url = f"{self.api_base}/info?uid={uid}"
             dress_url = f"{self.dress_api}?uid={uid}"
 
             async with aiohttp.ClientSession() as session:
