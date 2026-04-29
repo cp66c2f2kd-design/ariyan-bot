@@ -100,6 +100,28 @@ class Info(commands.Cog):
 
                             embed = discord.Embed(color=self.color)
 
+                            # Extra data
+                            diamond = data.get('diamondCostRes', {})
+                            prime = basic.get('primePrivilegeDetail', {})
+                            achievements = data.get('equippedAch', [])
+                            ach_list = ", ".join([str(a.get('achId', '')) for a in achievements]) if achievements else "None"
+
+                            # Account type mapping
+                            acc_type = basic.get('accountType', 0)
+                            acc_type_str = {1: "Free", 2: "Premium"}.get(acc_type, str(acc_type))
+
+                            # Gender
+                            gender_raw = social.get('gender', 'N/A') if social else 'N/A'
+                            gender = gender_raw.replace('Gender_', '') if isinstance(gender_raw, str) else str(gender_raw)
+
+                            # Language
+                            lang_raw = social.get('language', 'N/A') if social else 'N/A'
+                            lang = lang_raw.replace('Language_', '') if isinstance(lang_raw, str) else str(lang_raw)
+
+                            # Prime level
+                            prime_level = prime.get('primeLevel', 0) if prime else 0
+                            prime_str = f"Level {prime_level}" if prime_level else "None"
+
                             description = (
                                 f"**ARIYAN - FF INFO v2**\n\n"
 
@@ -108,33 +130,48 @@ class Info(commands.Cog):
                                 f"🟣 UID: `{basic.get('accountId', 'N/A')}`\n"
                                 f"🟣 Level: {basic.get('level', 'N/A')} (Exp: {basic.get('exp', '0')})\n"
                                 f"🟣 Region: {basic.get('region', region)}\n"
+                                f"🟣 Account Type: {acc_type_str}\n"
                                 f"🟣 Likes: {basic.get('liked', '0')}\n"
-                                f"🟣 Honor Score: {credit.get('creditScore', '100')}\n\n"
+                                f"🟣 Honor Score: {credit.get('creditScore', '100')}\n"
+                                f"🟣 Title ID: `{basic.get('title', 'None')}`\n\n"
 
                                 "🦋 **Account Activity** 🦋\n"
                                 f"🟣 Recent OB: {basic.get('releaseVersion', 'N/A')}\n"
+                                f"🟣 Season: {basic.get('seasonId', 'N/A')}\n"
                                 f"🟣 BP Badges: {basic.get('badgeCnt', '0')}\n"
                                 f"🟣 BR Rank Points: {basic.get('rankingPoints', '0')}\n"
                                 f"🟣 CS Rank Points: {basic.get('csRankingPoints', '0')}\n"
+                                f"🟣 Max BR Rank: {basic.get('maxRank', 'N/A')}\n"
+                                f"🟣 Max CS Rank: {basic.get('csMaxRank', 'N/A')}\n"
                                 f"🟣 Created At: **{created_at}**\n"
                                 f"🟣 Last Login: **{last_login}**\n\n"
 
                                 "✨ **Guild & Social** ✨\n"
-                                f"🟣 Signature: `{social.get('signature', 'No Signature')}`\n"
+                                f"🟣 Signature: `{social.get('signature', 'No Signature') if social else 'No Signature'}`\n"
+                                f"🟣 Gender: {gender}\n"
+                                f"🟣 Language: {lang}\n"
                                 f"🟣 Guild Name: {clan.get('clanName', 'No Guild')}\n"
                                 f"🟣 Guild ID: {clan.get('clanId', 'N/A')}\n"
                                 f"🟣 Guild Level: {clan.get('clanLevel', '0')}\n"
-                                f"🟣 Members: {clan.get('memberNum', '0')}/{clan.get('capacity', '0')}\n"
+                                f"🟣 Live Members: {clan.get('memberNum', '0')}/{clan.get('capacity', '0')}\n"
                                 f"🟣 Leader ID: {clan.get('captainId', 'N/A')}\n\n"
 
                                 "⚔️ **Combat & Skills** ⚔️\n"
                                 f"🟣 Equipped Skills: `{skill_list}`\n"
-                                f"🟣 Weapon Skins: `{weapon_list}`\n\n"
+                                f"🟣 Weapon Skins: `{weapon_list}`\n"
+                                f"🟣 Achievements: `{ach_list}`\n\n"
+
+                                "💎 **Premium & Economy** 💎\n"
+                                f"🟣 Diamond Cost: {diamond.get('diamondCost', '0')}\n"
+                                f"🟣 Prime Status: {prime_str}\n\n"
 
                                 "🩷 **Pet Details** 🩷\n"
+                                f"🟣 Equipped?: {'Yes' if pet and pet.get('isSelected') else 'No'}\n"
                                 f"🟣 Pet Name: {pet.get('name', 'N/A') if pet else 'No Pet'}\n"
                                 f"🟣 Pet ID: {pet.get('id', 'N/A') if pet else 'N/A'}\n"
-                                f"🟣 Pet Level: {pet.get('level', '0') if pet else '0'}"
+                                f"🟣 Pet Level: {pet.get('level', '0') if pet else '0'}\n"
+                                f"🟣 Pet Skin: `{pet.get('skinId', 'None') if pet else 'None'}`\n"
+                                f"🟣 Pet Skill: `{pet.get('selectedSkillId', 'None') if pet else 'None'}`"
                             )
 
                             embed.description = description
