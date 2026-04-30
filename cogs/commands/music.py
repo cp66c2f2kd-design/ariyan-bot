@@ -348,49 +348,69 @@ class Music(commands.Cog):
 
 
     async def display_player_embed(self, player, track, ctx, autoplay=False):
+        sec = track.length // 1000
+        duration = f"0{sec // 60}:{sec % 60:02d}" if sec < 600 else f"{sec // 60}:{sec % 60:02d}"
+        
+        color = 0x1DB954 if "spotify" in track.source else 0x00E6A7 if "jiosaavn" in track.source else 0x87CEEB if "youtube" in track.source else 0xFF5500
+        
+        source_field = (
+            f"[<:youtube:1329365996959567893>  Listen on Spotify]({track.uri})" if "spotify" in track.source
+            else f"[<:jiosaavn:1306976886047375430> Listen on JioSaavn]({track.uri})" if "jiosaavn" in track.source
+            else f"[<:SoundCloud:1307002774738829413> Listen on SoundCloud]({track.uri})" if "soundcloud" in track.source
+            else f"[<:YouTube:1344680847315570841> Listen on YouTube]({track.uri})"
+        )
+        
+        footer_text = "Requested by " + (ctx.author.display_name if not autoplay else f"{ctx.author.display_name} (Autoplay Mode)")
+        footer_icon = ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url
+
+        files_to_send = []
+
         if track.artwork:
-            template_path = 'data/pictures/player.png'
-            font_path = 'utils/arial.ttf'
-            font = ImageFont.truetype(font_path, 40) 
+            try:
+                template_path = 'data/pictures/player.png'
+                font_path = 'utils/arial.ttf'
+                font = ImageFont.truetype(font_path, 40) 
 
-            base_img = Image.open(template_path).convert("RGBA")
+                base_img = Image.open(template_path).convert("RGBA")
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(track.artwork) as resp:
-                    if resp.status == 200:
-                        track_img_data = io.BytesIO(await resp.read())
-                        track_img = Image.open(track_img_data).convert("RGBA")
-                        track_img = ImageOps.fit(track_img, (220, 220), centering=(0.5, 0.5))
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(track.artwork) as resp:
+                        if resp.status == 200:
+                            track_img_data = io.BytesIO(await resp.read())
+                            track_img = Image.open(track_img_data).convert("RGBA")
+                            track_img = ImageOps.fit(track_img, (220, 220), centering=(0.5, 0.5))
 
-                        mask = Image.new('L', (220, 220), 0)
-                        draw = ImageDraw.Draw(mask)
-                        draw.ellipse((0, 0, 220, 220), fill=255)
-                        track_img.putalpha(mask)
-                        base_img.paste(track_img, (15, 125 - 85), track_img) 
+                            mask = Image.new('L', (220, 220), 0)
+                            draw = ImageDraw.Draw(mask)
+                            draw.ellipse((0, 0, 220, 220), fill=255)
+                            track_img.putalpha(mask)
+                            base_img.paste(track_img, (15, 125 - 85), track_img) 
 
-            draw = ImageDraw.Draw(base_img)
-            draw.text((240, 50), track.title, font=font, fill="white")
+                draw = ImageDraw.Draw(base_img)
+                draw.text((240, 50), track.title, font=font, fill="white")
 
-            image_bytes = io.BytesIO()
-            base_img.save(image_bytes, format="PNG")
-            image_bytes.seek(0)
+                image_bytes = io.BytesIO()
+                base_img.save(image_bytes, format="PNG")
+                image_bytes.seek(0)
 
-            file = discord.File(image_bytes, filename="player.png")
-            sec = track.length // 1000
-            duration= f"0{sec // 60}:{sec % 60}" if sec < 600 else f"{sec // 60}:{sec % 60}"
-            embed = discord.Embed(title=f"**{track.title}**",
-            color=0x1DB954 if "spotify" in track.source else 0x00E6A7 if "jiosaavn" in track.source else 0x87CEEB if "youtube" in track.source else 0xFF5500
-            )
-            #embed.set_author(name="Now Playing", icon_url="https://cdn.discordapp.com/emojis/1275556609958875218.gif")
-            embed.add_field(name="Author", value=f"`{track.author}`")
-            embed.add_field(name="Duration", value=f"`{duration}`")
-            embed.add_field(name="Source", value=f"[<:youtube:1329365996959567893>  Listen on Spotify]({track.uri})" if "spotify" in track.source else f"[<:jiosaavn:1306976886047375430> Listen on JioSaavn]({track.uri})" if "jiosaavn" in track.source else f"[<:SoundCloud:1307002774738829413> Listen on SoundCloud]({track.uri})" if "soundcloud" in track.source else f"[<:YouTube:1344680847315570841> Listen on YouTube]({track.uri})")
+                file = discord.File(image_bytes, filename="player.png")
+                files_to_send.append(file)
+            except:
+                pass
+
+        embed = discord.Embed(title=f"**{track.title}**", color=color)
+        embed.add_field(name="Author", value=f"`{track.author}`")
+        embed.add_field(name="Duration", value=f"`{duration}`")
+        embed.add_field(name="Source", value=source_field)
+        
+        if files_to_send:
             embed.set_image(url="attachment://player.png")
-            embed.set_footer(text="Requested by " + (ctx.author.display_name if not autoplay else f"{ctx.author.display_name} (Autoplay Mode)"), icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
+        elif track.artwork:
+            embed.set_thumbnail(url=track.artwork)
+        
+        embed.set_footer(text=footer_text, icon_url=footer_icon)
 
-            await ctx.send(embed=embed, file=file, view=MusicControlView(player, ctx))
-        else:
-            await ctx.send(embed=discord.Embed(description="Track has no artwork."), ephemeral=True)
+        await ctx.send(embed=embed, files=files_to_send, view=MusicControlView(player, ctx))
 
 
     async def on_track_end(self, payload: wavelink.TrackEndEventPayload):
