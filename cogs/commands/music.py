@@ -483,27 +483,40 @@ class Music(commands.Cog):
         
             return"""
             
-        tracks = await wavelink.Playable.search(query)
+        try:
+            tracks = await wavelink.Playable.search(query)
+        except Exception:
+            tracks = None
+
+        # Fallback: try explicit YouTube search
         if not tracks:
-            await ctx.send(embed=discord.Embed(description="No results found.", color=0x87CEEB))
+            try:
+                tracks = await wavelink.Playable.search(query, source=wavelink.TrackSource.YouTube)
+            except Exception:
+                tracks = None
+
+        if not tracks:
+            await ctx.send(embed=discord.Embed(description="<:warning:1448951779353038949> No results found. Try a different search query.", color=0xFF0000))
             return
 
-        if isinstance(tracks, wavelink.Playlist):
-            await vc.queue.put_wait(tracks.tracks)
-            await ctx.send(embed=discord.Embed(description=f"<:zplus:1448951790463615038> Added playlist [{tracks.name}](https://discord.gg/PkDre8Juhp) with **{len(tracks.tracks)} songs** to the queue.", color=0x87CEEB))
-            if not vc.playing:
-                track = await vc.queue.get_wait()
-                await vc.play(track)
-                await self.display_player_embed(vc, track, ctx)
-        else:
-            track = tracks[0]
-            await vc.queue.put_wait(track)
-            await ctx.send(embed=discord.Embed(description=f"<:zplus:1448951790463615038>   Added [{track.title}](https://discord.gg/PkDre8Juhp) to the queue.", color=0x87CEEB))
-            if not vc.playing:
-                await vc.play(await vc.queue.get_wait())
-                await self.display_player_embed(vc, track, ctx)
-            self.client.loop.create_task(self.check_inactivity(ctx.guild.id))
-           # await interaction.response.defer()
+        try:
+            if isinstance(tracks, wavelink.Playlist):
+                await vc.queue.put_wait(tracks.tracks)
+                await ctx.send(embed=discord.Embed(description=f"<:zplus:1448951790463615038> Added playlist [{tracks.name}](https://discord.gg/PkDre8Juhp) with **{len(tracks.tracks)} songs** to the queue.", color=0x87CEEB))
+                if not vc.playing:
+                    track = await vc.queue.get_wait()
+                    await vc.play(track)
+                    await self.display_player_embed(vc, track, ctx)
+            else:
+                track = tracks[0]
+                await vc.queue.put_wait(track)
+                await ctx.send(embed=discord.Embed(description=f"<:zplus:1448951790463615038>   Added [{track.title}](https://discord.gg/PkDre8Juhp) to the queue.", color=0x87CEEB))
+                if not vc.playing:
+                    await vc.play(await vc.queue.get_wait())
+                    await self.display_player_embed(vc, track, ctx)
+                self.client.loop.create_task(self.check_inactivity(ctx.guild.id))
+        except Exception as e:
+            await ctx.send(embed=discord.Embed(description=f"<:warning:1448951779353038949> Failed to play: `{str(e)[:200]}`", color=0xFF0000))
 
 
     
