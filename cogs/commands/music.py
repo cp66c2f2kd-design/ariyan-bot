@@ -621,8 +621,10 @@ class Music(commands.Cog):
     @ignore_check()
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def play(self, ctx: commands.Context, *, query: str):
-        
-        await self.play_source(ctx, query)
+        try:
+            await self.play_source(ctx, query)
+        except Exception as e:
+            await ctx.send(embed=discord.Embed(description=f"<:warning:1448951779353038949> Music Error: `{type(e).__name__}: {str(e)[:300]}`", color=0xFF0000))
 
 
     @commands.command(name="search", usage="search <query>", help="Searches music from multiple platforms.")
