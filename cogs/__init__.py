@@ -70,6 +70,7 @@ from .commands.nitro import Nitro
 from .commands.image import ImageCommands
 from .commands.youtube import Youtube
 from .commands.info import Info
+from .commands.cmdtoggle import CommandToggle
 #____________ Events _____________
 
 #from .events.autoblacklist import AutoBlacklist
@@ -251,6 +252,7 @@ async def setup(bot: zyrox):
   await bot.add_cog(ImageCommands(bot))
   await bot.add_cog(Youtube(bot))
   await bot.add_cog(Info(bot))
+  await bot.add_cog(CommandToggle(bot))
 
   await bot.add_cog(_antinuke(bot))
   await bot.add_cog(_extra(bot))
