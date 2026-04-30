@@ -1,3 +1,4 @@
+import re
 import random
 import discord
 from discord.ext import commands, tasks
@@ -365,7 +366,15 @@ class Music(commands.Cog):
 
         files_to_send = []
 
-        if track.artwork:
+        # Get artwork URL - fallback to YouTube thumbnail if missing
+        artwork_url = track.artwork
+        if not artwork_url and track.uri:
+            # Try YouTube thumbnail fallback
+            yt_match = re.search(r'(?:v=|youtu\.be/)([a-zA-Z0-9_-]{11})', track.uri)
+            if yt_match:
+                artwork_url = f"https://img.youtube.com/vi/{yt_match.group(1)}/hqdefault.jpg"
+
+        if artwork_url:
             try:
                 template_path = 'data/pictures/player.png'
                 font_path = 'utils/arial.ttf'
@@ -374,7 +383,7 @@ class Music(commands.Cog):
                 base_img = Image.open(template_path).convert("RGBA")
 
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(track.artwork) as resp:
+                    async with session.get(artwork_url) as resp:
                         if resp.status == 200:
                             track_img_data = io.BytesIO(await resp.read())
                             track_img = Image.open(track_img_data).convert("RGBA")
@@ -405,8 +414,8 @@ class Music(commands.Cog):
         
         if files_to_send:
             embed.set_image(url="attachment://player.png")
-        elif track.artwork:
-            embed.set_thumbnail(url=track.artwork)
+        elif artwork_url:
+            embed.set_thumbnail(url=artwork_url)
         
         embed.set_footer(text=footer_text, icon_url=footer_icon)
 
