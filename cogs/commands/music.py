@@ -338,10 +338,10 @@ class Music(commands.Cog):
 
     async def connect_nodes(self) -> None:
         nodes = [
-            wavelink.Node(uri="https://lavalink.jirayu.net", password="youshallnotpass"),
-            wavelink.Node(uri="https://lavalinkv4.serenetia.com", password="https://seretia.link/discord"),
-            wavelink.Node(uri="https://lava-v4.millohost.my.id", password="https://discord.gg/mjS5J2K3ep"),
-            wavelink.Node(uri="https://lavalink-v4.triniumhost.com", password="free"),
+            wavelink.Node(uri="http://lavalink.jirayu.net:13592", password="youshallnotpass"),
+            wavelink.Node(uri="http://lava.g3v.co.uk:9008", password="lavalinklol"),
+            wavelink.Node(uri="http://n3.nexcloud.in:2026", password="nexcloud"),
+            wavelink.Node(uri="http://lava.kasawa.pro:2333", password="youshallnotpass"),
         ]
         await wavelink.Pool.connect(nodes=nodes, client=self.client, cache_capacity=None)
 
