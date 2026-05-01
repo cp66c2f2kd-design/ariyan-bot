@@ -643,7 +643,42 @@ RULES:
 
             full_context =system_context +history +[{"role":"user","content":message }]
 
-            return await self ._get_groq_response (message ,full_context )
+            groq_response = await self ._get_groq_response (message ,full_context )
+            
+            # If Groq failed, fallback to Gemini
+            if "Abhi thoda busy hoon" in groq_response or "Kuch gadbad ho gayi" in groq_response:
+                try:
+                    if self.gemini_api_key:
+                        genai.configure(api_key=self.gemini_api_key)
+                        
+                        system_prompt = "\n".join([msg.get("content", "") for msg in system_context])
+                        
+                        gemini_history = []
+                        for msg in history:
+                            role = "user" if msg.get("role") == "user" else "model"
+                            content = msg.get("content", "")
+                            if content:
+                                gemini_history.append({"role": role, "parts": [{"text": content}]})
+                        
+                        try:
+                            # Try with system_instruction (supported in newer google-generativeai versions)
+                            model = genai.GenerativeModel("gemini-1.5-pro", system_instruction=system_prompt)
+                            chat = model.start_chat(history=gemini_history)
+                            gemini_resp = await asyncio.to_thread(chat.send_message, message)
+                            return gemini_resp.text.strip()
+                        except Exception:
+                            # Fallback if system_instruction is not supported in the installed version
+                            gemini_history.insert(0, {"role": "user", "parts": [{"text": f"System Context:\n{system_prompt}"}]})
+                            gemini_history.insert(1, {"role": "model", "parts": [{"text": "Understood. I will follow these instructions."}]})
+                            model = genai.GenerativeModel("gemini-1.5-pro")
+                            chat = model.start_chat(history=gemini_history)
+                            gemini_resp = await asyncio.to_thread(chat.send_message, message)
+                            return gemini_resp.text.strip()
+                except Exception as e:
+                    logger.error(f"Gemini fallback failed: {e}")
+                    return "Sorry baby, mera system thoda slow chal raha hai abhi. Thodi der baad baat karte hain 🥺"
+            
+            return groq_response
 
         except Exception as e :
             logger .error (f"Error in _get_response: {e}")
