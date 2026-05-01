@@ -676,7 +676,30 @@ RULES:
                             return gemini_resp.text.strip()
                 except Exception as e:
                     logger.error(f"Gemini fallback failed: {e}")
-                    return "Sorry baby, mera system thoda slow chal raha hai abhi. Thodi der baad baat karte hain 🥺"
+                    
+                # Ultimate Fallback: Pollinations.ai (Free, no API key required)
+                try:
+                    url = "https://text.pollinations.ai/"
+                    headers = {"Content-Type": "application/json"}
+                    api_messages = []
+                    for msg in full_context:
+                        if isinstance(msg, dict):
+                            if "content" in msg:
+                                api_messages.append({"role": msg.get("role", "user"), "content": msg["content"]})
+                    
+                    data = {
+                        "messages": api_messages,
+                        "model": "openai",
+                        "temperature": 0.8
+                    }
+                    async with aiohttp.ClientSession() as session:
+                        async with session.post(url, headers=headers, json=data) as response:
+                            if response.status == 200:
+                                return await response.text()
+                except Exception as e:
+                    logger.error(f"Pollinations fallback failed: {e}")
+
+                return "Sorry baby, mera system thoda slow chal raha hai abhi. Please ek valid API key daal do ya baad mein try karo! 🥺"
             
             return groq_response
 
