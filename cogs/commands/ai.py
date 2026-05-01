@@ -16,13 +16,7 @@ import random
 import aiohttp 
 import logging 
 import io 
-import tempfile
 from PIL import Image 
-try:
-    import edge_tts
-    EDGE_TTS_AVAILABLE = True
-except ImportError:
-    EDGE_TTS_AVAILABLE = False
 
 
 logger =logging .getLogger ('discord')
@@ -570,10 +564,10 @@ class AI (commands .Cog ):
                             break
 
             logger.error(f"All Groq models failed. Last error: {last_error}")
-            return "Abhi thoda busy hoon, thodi der baad try karo 🥺"
+            return f"Abhi thoda busy hoon, thodi der baad try karo 🥺 (Error: {last_error})"
         except Exception as e :
             logger .error (f"Groq AI error: {e}")
-            return "Kuch gadbad ho gayi yaar, thodi der baad try karo 🥺"
+            return f"Kuch gadbad ho gayi yaar, thodi der baad try karo 🥺 (Exception: {e})"
 
     async def _get_response (self ,message :str ,history :list ,guild_id :int ,user_id :int =None )->str :
         try :
@@ -654,51 +648,6 @@ RULES:
         except Exception as e :
             logger .error (f"Error in _get_response: {e}")
             return "Sorry, I encountered an error while processing your request. Please try again!"
-
-    @ai .command (name ="voice",description ="Send AI reply as a voice message")
-    @app_commands .describe (text ="What do you want Ariyan to say?")
-    async def ai_voice (self ,ctx :commands .Context ,* ,text :str ):
-        """Generate AI response and send as voice audio"""
-        await ctx .defer ()
-        try:
-            # Get AI response first
-            guild_id = ctx.guild.id if ctx.guild else 0
-            user_id = ctx.author.id
-            history = []
-            if user_id in self.conversation_history:
-                history = self.conversation_history[user_id][-6:]
-
-            ai_reply = await self._get_response(text, history, guild_id, user_id)
-
-            if not EDGE_TTS_AVAILABLE:
-                await ctx.send(f"{ai_reply}\n\n*Voice not available - edge-tts not installed*")
-                return
-
-            # Convert to speech using cute Indian girl voice (expressive + higher pitch)
-            communicate = edge_tts.Communicate(
-                ai_reply, 
-                voice="en-IN-NeerjaExpressiveNeural",
-                pitch="+15Hz",
-                rate="+5%"
-            )
-            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
-                tmp_path = tmp.name
-
-            await communicate.save(tmp_path)
-
-            # Send as audio file
-            file = discord.File(tmp_path, filename="ariyan_voice.mp3")
-            await ctx.send(f"🎤 *{ai_reply}*", file=file)
-
-            # Cleanup
-            try:
-                os.remove(tmp_path)
-            except:
-                pass
-
-        except Exception as e:
-            logger.error(f"Voice error: {e}")
-            await ctx.send("Voice mein thodi problem aa gayi 🥺 Text mein baat karte hain!")
 
     @ai .command (name ="analyze",description ="Analyze an image or text and provide a description")
     @app_commands .describe (image ="Image to analyze (optional)",text ="Text to analyze (optional)")
